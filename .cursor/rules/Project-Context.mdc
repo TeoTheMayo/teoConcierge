@@ -1,0 +1,32 @@
+---
+alwaysApply: true
+---
+
+This is a simple Flask MVP app.
+
+## Structure
+- app.py: main entry point, routes and server setup
+- config.py: configuration variables
+- models/: business logic
+- db/: database file storage (csv, json, sqlite, etc.)
+- templates/: HTML (Jinja2)
+- static/: CSS, JS, images
+
+## Tech Stack
+- Backend: Python + Flask
+- Templating: Jinja2
+- Styling: Tailwind CSS (CDN, no npm)
+
+## Tailwind Usage
+- Load Tailwind via CDN in base template
+- Use utility classes directly in HTML
+- Do not set up a Tailwind build pipeline or npm
+
+## Guidelines
+- Separate concerns clearly:
+  - Routes in app.py
+  - Logic in models/
+
+## When Adding Features
+- Reuse existing structure(even existing funcitons)
+- Prefer simple solutions over clever ones

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en" id="html-root">
+<head id="head-root">
+    <meta charset="UTF-8" id="meta-charset">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" id="meta-viewport">
+    <title id="title-page">{% block title %}Assistant{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com" id="script-tailwind"></script>
+    <script id="script-tailwind-config">
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        surface: { DEFAULT: '#ffffff', muted: '#fafafa', border: '#e5e7eb' }
+                    }
+                }
+            }
+        };
+    </script>
+    {% block head_extra %}{% endblock %}
+</head>
+<body class="min-h-screen bg-surface text-zinc-900 antialiased" id="body-app">
+    <div id="layout-root" class="flex min-h-screen flex-col">
+        <header id="header-main" class="flex h-14 shrink-0 items-center border-b border-surface-border px-4 lg:px-6">
+            <div id="header-inner" class="flex w-full justify-end">
+                <h1 id="header-page-title">{% block header_page %}{% endblock %}</h1>
+            </div>
+        </header>
+
+        <div id="layout-body" class="flex min-h-0 flex-1">
+            <aside id="nav-sidebar" class="w-56 shrink-0 border-r border-surface-border">
+                <nav id="nav-primary" class="flex flex-col gap-1" aria-label="Main">
+                    <a
+                        id="nav-link-dashboard"
+                        href="{{ url_for('home') }}"
+                        {% if request.endpoint == 'home' %}data-nav-active="true" aria-current="page"{% endif %}
+                    >Dashboard</a>
+                    <a
+                        id="nav-link-notes"
+                        href="{{ url_for('notes') }}"
+                        {% if request.endpoint == 'notes' %}data-nav-active="true" aria-current="page"{% endif %}
+                    >Notes</a>
+                    <a
+                        id="nav-link-calendar"
+                        href="{{ url_for('calendar') }}"
+                        {% if request.endpoint == 'calendar' %}data-nav-active="true" aria-current="page"{% endif %}
+                    >Calendar</a>
+                    <a
+                        id="nav-link-tasks"
+                        href="{{ url_for('tasks') }}"
+                        {% if request.endpoint == 'tasks' %}data-nav-active="true" aria-current="page"{% endif %}
+                    >Tasks</a>
+                </nav>
+            </aside>
+
+            <main id="main-content" class="min-h-0 flex-1 overflow-auto p-4 lg:p-6">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

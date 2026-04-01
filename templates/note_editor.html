@@ -1,0 +1,393 @@
+{% extends "index.html" %}
+
+{% block title %}Edit Note · Assistant{% endblock %}
+
+{% block head_extra %}
+<style id="note-editor-page-style">
+    #header-main,
+    #nav-sidebar {
+        display: none;
+    }
+
+    #layout-body {
+        display: block;
+    }
+
+    #main-content {
+        padding: 0;
+        overflow: hidden;
+        background: #f3f4f6;
+    }
+    #note-editor-layout {
+        display: grid;
+        grid-template-columns: 20% 80%;
+        min-height: calc(100vh - 57px);
+    }
+    #note-sidebar {
+        border-right: 1px solid #e5e7eb;
+        background: #ffffff;
+        overflow: auto;
+    }
+    #note-workspace {
+        overflow: hidden;
+    }
+    #note-content-editor ul.dash-list {
+        list-style: none;
+        padding-left: 0;
+    }
+    #note-content-editor ul.dash-list > li::before {
+        content: "- ";
+        color: #374151;
+    }
+
+    #note-content-editor:empty:before {
+        content: attr(data-placeholder);
+        color: #9ca3af;
+    }
+
+    #note-content-editor {
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+</style>
+{% endblock %}
+
+{% block header_page %}Note Editor{% endblock %}
+
+{% block content %}
+<section id="note-editor-page" class="flex min-h-screen w-full flex-col">
+    <form
+        id="note-editor-form"
+        method="post"
+        action="{{ url_for('save_note_route', note_id=note.id) }}"
+        class="flex min-h-screen flex-col"
+    >
+        <div id="note-editor-toolbar" class="flex items-center justify-between border-b border-zinc-200 bg-white px-4 py-3">
+            <div id="note-editor-left-actions" class="flex items-center gap-3">
+                <a
+                    id="note-editor-back-button"
+                    href="{{ url_for('notes') }}"
+                    class="rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-100"
+                >
+                    Back
+                </a>
+                <span id="note-editor-notebook-name" class="text-xs text-zinc-500">Notebook: {{ note.notebook_name }}</span>
+            </div>
+            <button
+                id="note-save-button"
+                type="submit"
+                class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            >
+                Save
+            </button>
+        </div>
+
+        <div id="note-editor-layout">
+            <aside id="note-sidebar" class="px-3 py-4">
+                <div id="note-sidebar-header" class="mb-3 flex items-center justify-between gap-2">
+                    <h2 id="note-sidebar-title" class="text-sm font-semibold text-zinc-800">All Notes</h2>
+                    <a
+                        id="note-sidebar-create-link"
+                        href="{{ url_for('notes') }}"
+                        class="rounded border border-zinc-300 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100"
+                    >
+                        + New
+                    </a>
+                </div>
+                <ul id="note-sidebar-list" class="space-y-1">
+                    {% for list_note in notes_list %}
+                    <li id="note-sidebar-item-{{ list_note.id }}">
+                        <a
+                            id="note-sidebar-link-{{ list_note.id }}"
+                            href="{{ url_for('note_editor', note_id=list_note.id) }}"
+                            class="block rounded px-2 py-2 text-sm {% if list_note.id == note.id %}bg-zinc-900 text-white{% else %}text-zinc-700 hover:bg-zinc-100{% endif %}"
+                        >
+                            {{ list_note.title }}
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </aside>
+
+            <section id="note-workspace" class="flex flex-1 overflow-auto p-0">
+                <div id="note-canvas-page" class="flex h-full w-full flex-1 flex-col rounded-md border border-zinc-200 bg-white shadow-sm">
+                    <div id="note-title-field-wrapper" class="border-b border-zinc-100 px-8 py-6">
+                        <label id="note-title-label" for="note-title-input" class="sr-only">Title</label>
+                        <input
+                            id="note-title-input"
+                            name="title"
+                            type="text"
+                            value="{{ note.title }}"
+                            class="w-full border-0 p-0 text-3xl font-semibold text-zinc-900 outline-none placeholder:text-zinc-400 focus:ring-0"
+                            placeholder="Untitled"
+                            required
+                        >
+                    </div>
+
+                    <div id="note-format-toolbar" class="flex flex-wrap items-center gap-2 border-b border-zinc-100 px-6 py-3">
+                        <button id="toolbar-bold-button" type="button" data-command="bold" class="rounded border border-zinc-300 px-2 py-1 text-sm font-semibold text-zinc-700 hover:bg-zinc-100">B</button>
+                        <button id="toolbar-italic-button" type="button" data-command="italic" class="rounded border border-zinc-300 px-2 py-1 text-sm italic text-zinc-700 hover:bg-zinc-100">I</button>
+                        <button id="toolbar-underline-button" type="button" data-command="underline" class="rounded border border-zinc-300 px-2 py-1 text-sm underline text-zinc-700 hover:bg-zinc-100">U</button>
+                        <button id="toolbar-bullet-list-button" type="button" data-command="insertUnorderedList" class="rounded border border-zinc-300 px-2 py-1 text-sm text-zinc-700 hover:bg-zinc-100">Bullets</button>
+                        <button id="toolbar-dash-list-button" type="button" class="rounded border border-zinc-300 px-2 py-1 text-sm text-zinc-700 hover:bg-zinc-100">Dashes</button>
+                        <select id="toolbar-font-size-select" class="rounded border border-zinc-300 px-2 py-1 text-sm text-zinc-700">
+                            <option id="toolbar-font-size-12" value="12px">12</option>
+                            <option id="toolbar-font-size-14" value="14px">14</option>
+                            <option id="toolbar-font-size-16" value="16px" selected>16</option>
+                            <option id="toolbar-font-size-18" value="18px">18</option>
+                            <option id="toolbar-font-size-24" value="24px">24</option>
+                        </select>
+                        <label id="toolbar-text-color-label" for="toolbar-text-color-input" class="text-xs text-zinc-500">Text</label>
+                        <input id="toolbar-text-color-input" type="color" value="#1f2937" class="h-8 w-8 cursor-pointer rounded border border-zinc-300 bg-white p-1">
+                        <label id="toolbar-highlight-label" for="toolbar-highlight-input" class="text-xs text-zinc-500">Highlight</label>
+                        <input id="toolbar-highlight-input" type="color" value="#fef08a" class="h-8 w-8 cursor-pointer rounded border border-zinc-300 bg-white p-1">
+                        <select id="toolbar-line-spacing-select" class="rounded border border-zinc-300 px-2 py-1 text-sm text-zinc-700">
+                            <option id="toolbar-line-spacing-1" value="1">Line 1.0</option>
+                            <option id="toolbar-line-spacing-12" value="1.2">Line 1.2</option>
+                            <option id="toolbar-line-spacing-15" value="1.5" selected>Line 1.5</option>
+                            <option id="toolbar-line-spacing-2" value="2">Line 2.0</option>
+                        </select>
+                        <button id="toolbar-undo-button" type="button" class="rounded border border-zinc-300 px-2 py-1 text-sm text-zinc-700 hover:bg-zinc-100">Undo</button>
+                        <button id="toolbar-redo-button" type="button" class="rounded border border-zinc-300 px-2 py-1 text-sm text-zinc-700 hover:bg-zinc-100">Redo</button>
+                    </div>
+
+                    <div id="note-content-field-wrapper" class="flex flex-1 px-8 py-6">
+                        <label id="note-content-label" for="note-content-editor" class="sr-only">Content</label>
+                        <div
+                            id="note-content-editor"
+                            class="h-full min-h-[60vh] w-full border-0 p-0 text-base leading-7 text-zinc-800 outline-none focus:ring-0"
+                            contenteditable="true"
+                            data-placeholder="Start writing..."
+                        ></div>
+                        <textarea id="note-content-textarea-hidden" name="content" class="hidden">{{ note.content }}</textarea>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </form>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script id="note-editor-script">
+    (function () {
+        const form = document.getElementById("note-editor-form");
+        const titleInput = document.getElementById("note-title-input");
+        const editor = document.getElementById("note-content-editor");
+        const hiddenTextarea = document.getElementById("note-content-textarea-hidden");
+        const fontSizeSelect = document.getElementById("toolbar-font-size-select");
+        const textColorInput = document.getElementById("toolbar-text-color-input");
+        const highlightInput = document.getElementById("toolbar-highlight-input");
+        const lineSpacingSelect = document.getElementById("toolbar-line-spacing-select");
+        const undoButton = document.getElementById("toolbar-undo-button");
+        const redoButton = document.getElementById("toolbar-redo-button");
+        const dashListButton = document.getElementById("toolbar-dash-list-button");
+
+        const undoStack = [];
+        const redoStack = [];
+        let isApplyingState = false;
+        let lastSnapshotAt = 0;
+        let isSubmitting = false;
+
+        const initialContent = hiddenTextarea.value.trim();
+        editor.innerHTML = initialContent || "<p><br></p>";
+        editor.style.lineHeight = "1.5";
+        const initialState = {
+            title: titleInput.value,
+            content: editor.innerHTML
+        };
+
+        function getState() {
+            return {
+                title: titleInput.value,
+                content: editor.innerHTML
+            };
+        }
+
+        function applyState(state) {
+            isApplyingState = true;
+            titleInput.value = state.title;
+            editor.innerHTML = state.content || "<p><br></p>";
+            isApplyingState = false;
+        }
+
+        function pushUndoState() {
+            if (isApplyingState) {
+                return;
+            }
+            const state = getState();
+            const lastState = undoStack[undoStack.length - 1];
+            if (!lastState || lastState.title !== state.title || lastState.content !== state.content) {
+                undoStack.push(state);
+                if (undoStack.length > 100) {
+                    undoStack.shift();
+                }
+            }
+        }
+
+        function updateUndoRedoButtons() {
+            undoButton.disabled = undoStack.length <= 1;
+            redoButton.disabled = redoStack.length === 0;
+            undoButton.classList.toggle("opacity-50", undoButton.disabled);
+            redoButton.classList.toggle("opacity-50", redoButton.disabled);
+        }
+
+        function captureStateWithThrottle() {
+            const now = Date.now();
+            if (now - lastSnapshotAt < 250) {
+                return;
+            }
+            lastSnapshotAt = now;
+            pushUndoState();
+            redoStack.length = 0;
+            updateUndoRedoButtons();
+        }
+
+        function runCommand(command, value) {
+            editor.focus();
+            document.execCommand(command, false, value);
+            captureStateWithThrottle();
+        }
+
+        function applyFontSize(pxValue) {
+            editor.focus();
+            document.execCommand("fontSize", false, "7");
+            const fontNodes = editor.querySelectorAll("font[size='7']");
+            for (const node of fontNodes) {
+                node.removeAttribute("size");
+                node.style.fontSize = pxValue;
+            }
+            captureStateWithThrottle();
+        }
+
+        function getClosestBlock(node) {
+            if (!node) {
+                return null;
+            }
+            if (node.nodeType === Node.TEXT_NODE) {
+                return node.parentElement ? node.parentElement.closest("p, div, li, h1, h2, h3, h4, h5, h6, blockquote") : null;
+            }
+            return node.closest ? node.closest("p, div, li, h1, h2, h3, h4, h5, h6, blockquote") : null;
+        }
+
+        function applyLineSpacing(spacingValue) {
+            const selection = window.getSelection();
+            if (!selection || selection.rangeCount === 0) {
+                editor.style.lineHeight = spacingValue;
+                captureStateWithThrottle();
+                return;
+            }
+
+            const range = selection.getRangeAt(0);
+            const startBlock = getClosestBlock(range.startContainer);
+            const endBlock = getClosestBlock(range.endContainer);
+            const blocks = [];
+
+            if (startBlock && editor.contains(startBlock)) {
+                blocks.push(startBlock);
+            }
+            if (endBlock && editor.contains(endBlock) && endBlock !== startBlock) {
+                blocks.push(endBlock);
+            }
+
+            if (blocks.length === 0) {
+                editor.style.lineHeight = spacingValue;
+            } else {
+                for (const block of blocks) {
+                    block.style.lineHeight = spacingValue;
+                }
+            }
+            captureStateWithThrottle();
+        }
+
+        function handleUndo() {
+            if (undoStack.length <= 1) {
+                return;
+            }
+            const current = undoStack.pop();
+            redoStack.push(current);
+            const previous = undoStack[undoStack.length - 1];
+            applyState(previous);
+            updateUndoRedoButtons();
+        }
+
+        function handleRedo() {
+            if (redoStack.length === 0) {
+                return;
+            }
+            const next = redoStack.pop();
+            applyState(next);
+            undoStack.push(next);
+            updateUndoRedoButtons();
+        }
+
+        document.querySelectorAll("[data-command]").forEach((button) => {
+            button.addEventListener("click", () => {
+                runCommand(button.dataset.command);
+            });
+        });
+
+        dashListButton.addEventListener("click", () => {
+            runCommand("insertUnorderedList");
+            const selection = window.getSelection();
+            if (!selection || selection.rangeCount === 0) {
+                return;
+            }
+            const node = selection.anchorNode;
+            const element = node && node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+            const list = element && element.closest ? element.closest("ul") : null;
+            if (list) {
+                list.classList.toggle("dash-list");
+            }
+            captureStateWithThrottle();
+        });
+
+        fontSizeSelect.addEventListener("change", () => applyFontSize(fontSizeSelect.value));
+        textColorInput.addEventListener("input", () => runCommand("foreColor", textColorInput.value));
+        highlightInput.addEventListener("input", () => runCommand("hiliteColor", highlightInput.value));
+        lineSpacingSelect.addEventListener("change", () => applyLineSpacing(lineSpacingSelect.value));
+
+        undoButton.addEventListener("click", handleUndo);
+        redoButton.addEventListener("click", handleRedo);
+
+        editor.addEventListener("input", captureStateWithThrottle);
+        titleInput.addEventListener("input", captureStateWithThrottle);
+
+        document.addEventListener("keydown", (event) => {
+            const isMeta = event.metaKey || event.ctrlKey;
+            if (!isMeta) {
+                return;
+            }
+            const key = event.key.toLowerCase();
+            if (key === "z" && !event.shiftKey) {
+                event.preventDefault();
+                handleUndo();
+            } else if ((key === "z" && event.shiftKey) || key === "y") {
+                event.preventDefault();
+                handleRedo();
+            }
+        });
+
+        form.addEventListener("submit", () => {
+            isSubmitting = true;
+            hiddenTextarea.value = editor.innerHTML;
+        });
+
+        window.addEventListener("beforeunload", (event) => {
+            if (isSubmitting) {
+                return;
+            }
+            const currentState = getState();
+            const hasUnsavedChanges =
+                currentState.title !== initialState.title || currentState.content !== initialState.content;
+            if (hasUnsavedChanges) {
+                event.preventDefault();
+                event.returnValue = "";
+            }
+        });
+
+        pushUndoState();
+        updateUndoRedoButtons();
+    })();
+</script>
+{% endblock %}

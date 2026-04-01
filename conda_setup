@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+# Set up or refresh the teoconcierge conda environment (Python 3.12 + requirments.txt).
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REQ_FILE="${SCRIPT_DIR}/requirments.txt"
+ENV_NAME="teoconcierge"
+PYTHON_VER="3.12"
+
+die() {
+  echo "conda_setup: error: $*" >&2
+  exit 1
+}
+
+if [[ ! -f "$REQ_FILE" ]]; then
+  die "missing ${REQ_FILE}"
+fi
+
+# Find conda: PATH first, then common macOS install locations.
+init_conda() {
+  if command -v conda &>/dev/null; then
+    eval "$(conda shell.bash hook)"
+    return 0
+  fi
+  local sh
+  for prefix in \
+    "${HOME}/miniforge3" \
+    "${HOME}/miniconda3" \
+    "${HOME}/anaconda3" \
+    "${HOME}/mambaforge" \
+    "/opt/homebrew/Caskroom/miniconda/base" \
+    "/usr/local/Caskroom/miniconda/base"; do
+    sh="${prefix}/etc/profile.d/conda.sh"
+    if [[ -f "$sh" ]]; then
+      # shellcheck source=/dev/null
+      source "$sh"
+      return 0
+    fi
+  done
+  return 1
+}
+
+if ! init_conda; then
+  die "conda not found. Install Miniconda/Miniforge or add conda to PATH."
+fi
+
+env_exists() {
+  conda env list | awk 'NF>1 && $1!="#" && $1!="*" {print $1}' | grep -qx "$ENV_NAME"
+}
+
+pip_install_req() {
+  echo "conda_setup: installing/updating packages from requirments.txt in ${ENV_NAME}..."
+  conda run -n "$ENV_NAME" python -m pip install --upgrade pip setuptools wheel
+  conda run -n "$ENV_NAME" python -m pip install -r "$REQ_FILE" --upgrade
+}
+
+if env_exists; then
+  echo "conda_setup: environment '${ENV_NAME}' found."
+  py_ver="$(conda run -n "$ENV_NAME" python -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')"
+  if [[ "$py_ver" != "$PYTHON_VER" ]]; then
+    die "environment '${ENV_NAME}' uses Python ${py_ver}; this project requires Python ${PYTHON_VER} only. Remove the env and re-run: conda env remove -n ${ENV_NAME}"
+  fi
+  pip_install_req
+else
+  echo "conda_setup: creating environment '${ENV_NAME}' with Python ${PYTHON_VER}..."
+  conda create -n "$ENV_NAME" "python=${PYTHON_VER}" -y
+  pip_install_req
+fi
+
+echo "conda_setup: done. Activate with: conda activate ${ENV_NAME}"

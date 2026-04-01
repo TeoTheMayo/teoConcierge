@@ -1,0 +1,45 @@
+{% extends "index.html" %}
+
+{% block title %}Notes · Assistant{% endblock %}
+
+{% block header_page %}Notes{% endblock %}
+
+{% block content %}
+<section id="notes-page-section" class="mx-auto flex w-full max-w-4xl flex-col gap-6">
+    <div id="notes-top-bar" class="flex items-center justify-between gap-3">
+        <h2 id="notes-page-heading" class="text-xl font-semibold text-zinc-900">Your Notes</h2>
+        <form id="notes-create-form" method="post" action="{{ url_for('create_note_route') }}">
+            <button
+                id="notes-create-button"
+                type="submit"
+                class="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
+            >
+                Create New Note
+            </button>
+        </form>
+    </div>
+
+    <div id="notes-list-wrapper" class="rounded-lg border border-surface-border bg-white">
+        {% if notes_list %}
+            <ul id="notes-list" class="divide-y divide-surface-border">
+                {% for note in notes_list %}
+                    <li id="notes-item-{{ note.id }}" class="p-4">
+                        <a
+                            id="notes-link-{{ note.id }}"
+                            href="{{ url_for('note_editor', note_id=note.id) }}"
+                            class="flex items-center justify-between gap-3 hover:opacity-80"
+                        >
+                            <span id="notes-title-{{ note.id }}" class="font-medium text-zinc-900">{{ note.title }}</span>
+                            <span id="notes-updated-{{ note.id }}" class="text-xs text-zinc-500">{{ note.updated_at }}</span>
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <div id="notes-empty-state" class="p-6 text-sm text-zinc-500">
+                No notes yet. Create your first note to start writing.
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
