@@ -16,12 +16,12 @@
     #main-content {
         padding: 0;
         overflow: hidden;
-        background: #f3f4f6;
+        background: #ffffff;
     }
     #note-editor-layout {
         display: grid;
         grid-template-columns: 20% 80%;
-        min-height: calc(100vh - 57px);
+        min-height: 100vh;
     }
     #note-sidebar {
         border-right: 1px solid #e5e7eb;
@@ -49,6 +49,14 @@
         white-space: pre-wrap;
         word-break: break-word;
     }
+    .toolbar-active {
+        background: #e5e7eb;
+        color: #111827;
+    }
+    .toolbar-divider {
+        color: #9ca3af;
+        user-select: none;
+    }
 </style>
 {% endblock %}
 
@@ -62,38 +70,18 @@
         action="{{ url_for('save_note_route', note_id=note.id) }}"
         class="flex min-h-screen flex-col"
     >
-        <div id="note-editor-toolbar" class="flex items-center justify-between border-b border-zinc-200 bg-white px-4 py-3">
-            <div id="note-editor-left-actions" class="flex items-center gap-3">
-                <a
-                    id="note-editor-back-button"
-                    href="{{ url_for('notes') }}"
-                    class="rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-100"
-                >
-                    Back
-                </a>
-                <span id="note-editor-notebook-name" class="text-xs text-zinc-500">Notebook: {{ note.notebook_name }}</span>
-            </div>
-            <button
-                id="note-save-button"
-                type="submit"
-                class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-            >
-                Save
-            </button>
-        </div>
-
         <div id="note-editor-layout">
-            <aside id="note-sidebar" class="px-3 py-4">
+            <aside id="note-sidebar" class="px-3 pt-3 pb-4">
                 <div id="note-sidebar-header" class="mb-3 flex items-center justify-between gap-2">
-                    <h2 id="note-sidebar-title" class="text-sm font-semibold text-zinc-800">All Notes</h2>
                     <a
-                        id="note-sidebar-create-link"
+                        id="note-editor-back-button"
                         href="{{ url_for('notes') }}"
-                        class="rounded border border-zinc-300 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100"
+                        class="text-xs font-medium text-zinc-600 hover:text-zinc-900"
                     >
-                        + New
+                        Back
                     </a>
                 </div>
+                <div id="note-sidebar-notebook-meta" class="mb-3 text-xs text-zinc-500">Notebook: {{ note.notebook_name }}</div>
                 <ul id="note-sidebar-list" class="space-y-1">
                     {% for list_note in notes_list %}
                     <li id="note-sidebar-item-{{ list_note.id }}">
@@ -110,27 +98,57 @@
             </aside>
 
             <section id="note-workspace" class="flex flex-1 overflow-auto p-0">
-                <div id="note-canvas-page" class="flex h-full w-full flex-1 flex-col rounded-md border border-zinc-200 bg-white shadow-sm">
-                    <div id="note-title-field-wrapper" class="border-b border-zinc-100 px-8 py-6">
-                        <label id="note-title-label" for="note-title-input" class="sr-only">Title</label>
-                        <input
-                            id="note-title-input"
-                            name="title"
-                            type="text"
-                            value="{{ note.title }}"
-                            class="w-full border-0 p-0 text-3xl font-semibold text-zinc-900 outline-none placeholder:text-zinc-400 focus:ring-0"
-                            placeholder="Untitled"
-                            required
-                        >
+                <div id="note-canvas-page" class="flex h-full w-full flex-1 flex-col bg-white">
+                    <div id="note-title-field-wrapper" class="flex items-start justify-between gap-4 px-6 pt-4 pb-5 lg:px-8">
+                        <div id="note-title-left-meta" class="min-w-0 flex-1">
+                            <label id="note-title-label" for="note-title-input" class="sr-only">Title</label>
+                            <input
+                                id="note-title-input"
+                                name="title"
+                                type="text"
+                                value="{{ note.title }}"
+                                class="w-full border-0 p-0 text-3xl font-semibold text-zinc-900 outline-none placeholder:text-zinc-400 focus:ring-0"
+                                placeholder="Untitled"
+                                required
+                            >
+                            <div id="note-last-edited-text" class="mt-2 text-xs text-zinc-500">Last edited: {{ note_updated_display }}</div>
+                        </div>
+                        <div id="note-title-save-wrapper" class="shrink-0">
+                            <button
+                                id="note-save-button"
+                                type="submit"
+                                class="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                            >
+                                Save
+                            </button>
+                        </div>
                     </div>
 
-                    <div id="note-format-toolbar" class="flex flex-wrap items-center gap-2 border-b border-zinc-100 px-6 py-3">
-                        <button id="toolbar-bold-button" type="button" data-command="bold" class="rounded border border-zinc-300 px-2 py-1 text-sm font-semibold text-zinc-700 hover:bg-zinc-100">B</button>
-                        <button id="toolbar-italic-button" type="button" data-command="italic" class="rounded border border-zinc-300 px-2 py-1 text-sm italic text-zinc-700 hover:bg-zinc-100">I</button>
-                        <button id="toolbar-underline-button" type="button" data-command="underline" class="rounded border border-zinc-300 px-2 py-1 text-sm underline text-zinc-700 hover:bg-zinc-100">U</button>
-                        <button id="toolbar-bullet-list-button" type="button" data-command="insertUnorderedList" class="rounded border border-zinc-300 px-2 py-1 text-sm text-zinc-700 hover:bg-zinc-100">Bullets</button>
-                        <button id="toolbar-dash-list-button" type="button" class="rounded border border-zinc-300 px-2 py-1 text-sm text-zinc-700 hover:bg-zinc-100">Dashes</button>
-                        <select id="toolbar-font-size-select" class="rounded border border-zinc-300 px-2 py-1 text-sm text-zinc-700">
+                    <div id="note-format-toolbar" class="flex flex-wrap items-center gap-2 border-y border-zinc-200 bg-zinc-50 px-6 py-2">
+                        <div id="toolbar-text-style-group" class="inline-flex items-center gap-1">
+                            <button id="toolbar-bold-button" type="button" data-command="bold" class="rounded px-2 py-1 text-sm font-semibold text-zinc-700 hover:bg-zinc-200">B</button>
+                            <button id="toolbar-italic-button" type="button" data-command="italic" class="rounded px-2 py-1 text-sm italic text-zinc-700 hover:bg-zinc-200">I</button>
+                            <button id="toolbar-underline-button" type="button" data-command="underline" class="rounded px-2 py-1 text-sm underline text-zinc-700 hover:bg-zinc-200">U</button>
+                        </div>
+                        <span id="toolbar-divider-text-style" class="toolbar-divider">|</span>
+                        <div id="toolbar-list-spacing-group" class="relative inline-flex items-center gap-1">
+                            <div id="toolbar-list-control-group" class="inline-flex items-center rounded border border-zinc-300 bg-white">
+                                <button id="toolbar-bullet-list-button" type="button" class="rounded-l px-2 py-1 text-sm text-zinc-700 hover:bg-zinc-200">Bullets</button>
+                                <button id="toolbar-list-menu-button" type="button" class="rounded-r border-l border-zinc-300 px-2 py-1 text-sm text-zinc-700 hover:bg-zinc-200">▼</button>
+                            </div>
+                            <div id="toolbar-list-menu" class="absolute left-0 top-9 z-10 hidden min-w-[140px] rounded border border-zinc-200 bg-white p-1 shadow-sm">
+                                <button id="toolbar-list-mode-bullets" type="button" class="block w-full rounded px-2 py-1 text-left text-sm text-zinc-700 hover:bg-zinc-100">Bullets</button>
+                                <button id="toolbar-list-mode-dashes" type="button" class="block w-full rounded px-2 py-1 text-left text-sm text-zinc-700 hover:bg-zinc-100">Dashes</button>
+                            </div>
+                            <select id="toolbar-line-spacing-select" class="rounded bg-white px-2 py-1 text-sm text-zinc-700">
+                                <option id="toolbar-line-spacing-1" value="1">Line 1.0</option>
+                                <option id="toolbar-line-spacing-12" value="1.2">Line 1.2</option>
+                                <option id="toolbar-line-spacing-15" value="1.5" selected>Line 1.5</option>
+                                <option id="toolbar-line-spacing-2" value="2">Line 2.0</option>
+                            </select>
+                        </div>
+                        <span id="toolbar-divider-font-size" class="toolbar-divider">|</span>
+                        <select id="toolbar-font-size-select" class="rounded bg-white px-2 py-1 text-sm text-zinc-700">
                             <option id="toolbar-font-size-12" value="12px">12</option>
                             <option id="toolbar-font-size-14" value="14px">14</option>
                             <option id="toolbar-font-size-16" value="16px" selected>16</option>
@@ -138,20 +156,30 @@
                             <option id="toolbar-font-size-24" value="24px">24</option>
                         </select>
                         <label id="toolbar-text-color-label" for="toolbar-text-color-input" class="text-xs text-zinc-500">Text</label>
-                        <input id="toolbar-text-color-input" type="color" value="#1f2937" class="h-8 w-8 cursor-pointer rounded border border-zinc-300 bg-white p-1">
-                        <label id="toolbar-highlight-label" for="toolbar-highlight-input" class="text-xs text-zinc-500">Highlight</label>
-                        <input id="toolbar-highlight-input" type="color" value="#fef08a" class="h-8 w-8 cursor-pointer rounded border border-zinc-300 bg-white p-1">
-                        <select id="toolbar-line-spacing-select" class="rounded border border-zinc-300 px-2 py-1 text-sm text-zinc-700">
-                            <option id="toolbar-line-spacing-1" value="1">Line 1.0</option>
-                            <option id="toolbar-line-spacing-12" value="1.2">Line 1.2</option>
-                            <option id="toolbar-line-spacing-15" value="1.5" selected>Line 1.5</option>
-                            <option id="toolbar-line-spacing-2" value="2">Line 2.0</option>
-                        </select>
-                        <button id="toolbar-undo-button" type="button" class="rounded border border-zinc-300 px-2 py-1 text-sm text-zinc-700 hover:bg-zinc-100">Undo</button>
-                        <button id="toolbar-redo-button" type="button" class="rounded border border-zinc-300 px-2 py-1 text-sm text-zinc-700 hover:bg-zinc-100">Redo</button>
+                        <input id="toolbar-text-color-input" type="color" value="#1f2937" class="h-7 w-7 cursor-pointer rounded border border-zinc-300 bg-white p-0.5">
+                        <span id="toolbar-highlight-label" class="text-xs text-zinc-500">Highlight</span>
+                        <div id="toolbar-highlight-control-group" class="inline-flex items-center rounded border border-zinc-300 bg-white">
+                            <button id="toolbar-highlight-input" type="button" class="rounded-l px-2 py-1 text-sm text-zinc-700 hover:bg-zinc-200">Highlight</button>
+                            <button id="toolbar-highlight-dropdown-button" type="button" class="rounded-r border-l border-zinc-300 px-2 py-1 text-sm text-zinc-700 hover:bg-zinc-200">▼</button>
+                        </div>
+                        <input id="toolbar-highlight-color-picker" type="color" value="#fef08a" class="sr-only">
+                        <div id="toolbar-history-actions" class="ml-auto inline-flex items-center gap-1">
+                            <button id="toolbar-undo-button" type="button" class="rounded p-1.5 text-zinc-700 hover:bg-zinc-200" aria-label="Undo">
+                                <svg id="toolbar-undo-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-4 w-4 fill-none stroke-current stroke-2">
+                                    <path id="toolbar-undo-icon-path-1" d="M9 7H4v5" />
+                                    <path id="toolbar-undo-icon-path-2" d="M20 17a8 8 0 0 0-8-8H4" />
+                                </svg>
+                            </button>
+                            <button id="toolbar-redo-button" type="button" class="rounded p-1.5 text-zinc-700 hover:bg-zinc-200" aria-label="Redo">
+                                <svg id="toolbar-redo-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-4 w-4 fill-none stroke-current stroke-2">
+                                    <path id="toolbar-redo-icon-path-1" d="M15 7h5v5" />
+                                    <path id="toolbar-redo-icon-path-2" d="M4 17a8 8 0 0 1 8-8h8" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
 
-                    <div id="note-content-field-wrapper" class="flex flex-1 px-8 py-6">
+                    <div id="note-content-field-wrapper" class="flex flex-1 px-6 pb-6 pt-2 lg:px-8">
                         <label id="note-content-label" for="note-content-editor" class="sr-only">Content</label>
                         <div
                             id="note-content-editor"
@@ -177,21 +205,37 @@
         const hiddenTextarea = document.getElementById("note-content-textarea-hidden");
         const fontSizeSelect = document.getElementById("toolbar-font-size-select");
         const textColorInput = document.getElementById("toolbar-text-color-input");
-        const highlightInput = document.getElementById("toolbar-highlight-input");
+        const highlightButton = document.getElementById("toolbar-highlight-input");
+        const highlightDropdownButton = document.getElementById("toolbar-highlight-dropdown-button");
+        const highlightColorPicker = document.getElementById("toolbar-highlight-color-picker");
+        const listMenuButton = document.getElementById("toolbar-list-menu-button");
+        const listMenu = document.getElementById("toolbar-list-menu");
+        const listModeBulletsButton = document.getElementById("toolbar-list-mode-bullets");
+        const listModeDashesButton = document.getElementById("toolbar-list-mode-dashes");
         const lineSpacingSelect = document.getElementById("toolbar-line-spacing-select");
         const undoButton = document.getElementById("toolbar-undo-button");
         const redoButton = document.getElementById("toolbar-redo-button");
-        const dashListButton = document.getElementById("toolbar-dash-list-button");
+        const boldButton = document.getElementById("toolbar-bold-button");
+        const italicButton = document.getElementById("toolbar-italic-button");
+        const underlineButton = document.getElementById("toolbar-underline-button");
+        const bulletListButton = document.getElementById("toolbar-bullet-list-button");
 
         const undoStack = [];
         const redoStack = [];
         let isApplyingState = false;
         let lastSnapshotAt = 0;
         let isSubmitting = false;
+        let savedSelectionRange = null;
+        let currentListMode = "bullets";
 
         const initialContent = hiddenTextarea.value.trim();
-        editor.innerHTML = initialContent || "<p><br></p>";
-        editor.style.lineHeight = "1.5";
+        const spacingPattern = /^<div data-note-line-spacing="([^"]+)">([\s\S]*)<\/div>$/;
+        const spacingMatch = initialContent.match(spacingPattern);
+        const initialLineSpacing = spacingMatch ? spacingMatch[1] : "1.5";
+        const initialEditorContent = spacingMatch ? spacingMatch[2] : initialContent;
+        editor.innerHTML = initialEditorContent || "<p><br></p>";
+        editor.style.lineHeight = initialLineSpacing;
+        lineSpacingSelect.value = initialLineSpacing;
         const initialState = {
             title: titleInput.value,
             content: editor.innerHTML
@@ -245,8 +289,33 @@
 
         function runCommand(command, value) {
             editor.focus();
+            restoreSavedSelection();
             document.execCommand(command, false, value);
             captureStateWithThrottle();
+            refreshToolbarState();
+        }
+
+        function saveCurrentSelection() {
+            const selection = window.getSelection();
+            if (!selection || selection.rangeCount === 0) {
+                return;
+            }
+            const range = selection.getRangeAt(0);
+            if (editor.contains(range.commonAncestorContainer)) {
+                savedSelectionRange = range.cloneRange();
+            }
+        }
+
+        function restoreSavedSelection() {
+            if (!savedSelectionRange) {
+                return;
+            }
+            const selection = window.getSelection();
+            if (!selection) {
+                return;
+            }
+            selection.removeAllRanges();
+            selection.addRange(savedSelectionRange);
         }
 
         function applyFontSize(pxValue) {
@@ -258,6 +327,7 @@
                 node.style.fontSize = pxValue;
             }
             captureStateWithThrottle();
+            refreshToolbarState();
         }
 
         function getClosestBlock(node) {
@@ -274,7 +344,9 @@
             const selection = window.getSelection();
             if (!selection || selection.rangeCount === 0) {
                 editor.style.lineHeight = spacingValue;
+                lineSpacingSelect.value = spacingValue;
                 captureStateWithThrottle();
+                refreshToolbarState();
                 return;
             }
 
@@ -297,7 +369,43 @@
                     block.style.lineHeight = spacingValue;
                 }
             }
+            lineSpacingSelect.value = spacingValue;
             captureStateWithThrottle();
+            refreshToolbarState();
+        }
+
+        function toggleListMenu() {
+            listMenu.classList.toggle("hidden");
+        }
+
+        function closeListMenu() {
+            listMenu.classList.add("hidden");
+        }
+
+        function applyListMode(mode) {
+            currentListMode = mode;
+            bulletListButton.textContent = mode === "dashes" ? "Dashes" : "Bullets";
+            closeListMenu();
+        }
+
+        function applyListByMode() {
+            runCommand("insertUnorderedList");
+            const selection = window.getSelection();
+            if (!selection || selection.rangeCount === 0) {
+                return;
+            }
+            const node = selection.anchorNode;
+            const element = node && node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+            const list = element && element.closest ? element.closest("ul") : null;
+            if (list) {
+                if (currentListMode === "dashes") {
+                    list.classList.add("dash-list");
+                } else {
+                    list.classList.remove("dash-list");
+                }
+            }
+            captureStateWithThrottle();
+            refreshToolbarState();
         }
 
         function handleUndo() {
@@ -309,6 +417,7 @@
             const previous = undoStack[undoStack.length - 1];
             applyState(previous);
             updateUndoRedoButtons();
+            refreshToolbarState();
         }
 
         function handleRedo() {
@@ -319,6 +428,26 @@
             applyState(next);
             undoStack.push(next);
             updateUndoRedoButtons();
+            refreshToolbarState();
+        }
+
+        function setButtonActive(button, isActive) {
+            if (!button) {
+                return;
+            }
+            button.classList.toggle("toolbar-active", Boolean(isActive));
+        }
+
+        function refreshToolbarState() {
+            const isBold = document.queryCommandState("bold");
+            const isItalic = document.queryCommandState("italic");
+            const isUnderline = document.queryCommandState("underline");
+            const isBulletList = document.queryCommandState("insertUnorderedList");
+
+            setButtonActive(boldButton, isBold);
+            setButtonActive(italicButton, isItalic);
+            setButtonActive(underlineButton, isUnderline);
+            setButtonActive(bulletListButton, isBulletList);
         }
 
         document.querySelectorAll("[data-command]").forEach((button) => {
@@ -327,24 +456,21 @@
             });
         });
 
-        dashListButton.addEventListener("click", () => {
-            runCommand("insertUnorderedList");
-            const selection = window.getSelection();
-            if (!selection || selection.rangeCount === 0) {
-                return;
-            }
-            const node = selection.anchorNode;
-            const element = node && node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
-            const list = element && element.closest ? element.closest("ul") : null;
-            if (list) {
-                list.classList.toggle("dash-list");
-            }
-            captureStateWithThrottle();
-        });
+        bulletListButton.addEventListener("click", applyListByMode);
+        listMenuButton.addEventListener("click", toggleListMenu);
+        listModeBulletsButton.addEventListener("click", () => applyListMode("bullets"));
+        listModeDashesButton.addEventListener("click", () => applyListMode("dashes"));
 
         fontSizeSelect.addEventListener("change", () => applyFontSize(fontSizeSelect.value));
         textColorInput.addEventListener("input", () => runCommand("foreColor", textColorInput.value));
-        highlightInput.addEventListener("input", () => runCommand("hiliteColor", highlightInput.value));
+        highlightButton.addEventListener("click", () => runCommand("hiliteColor", highlightColorPicker.value));
+        highlightDropdownButton.addEventListener("click", () => {
+            saveCurrentSelection();
+            highlightColorPicker.click();
+        });
+        highlightColorPicker.addEventListener("input", () => {
+            runCommand("hiliteColor", highlightColorPicker.value);
+        });
         lineSpacingSelect.addEventListener("change", () => applyLineSpacing(lineSpacingSelect.value));
 
         undoButton.addEventListener("click", handleUndo);
@@ -352,6 +478,24 @@
 
         editor.addEventListener("input", captureStateWithThrottle);
         titleInput.addEventListener("input", captureStateWithThrottle);
+        editor.addEventListener("keyup", saveCurrentSelection);
+        editor.addEventListener("mouseup", saveCurrentSelection);
+        editor.addEventListener("focus", saveCurrentSelection);
+        textColorInput.addEventListener("mousedown", saveCurrentSelection);
+        highlightButton.addEventListener("mousedown", saveCurrentSelection);
+        highlightDropdownButton.addEventListener("mousedown", saveCurrentSelection);
+        editor.addEventListener("keyup", refreshToolbarState);
+        editor.addEventListener("mouseup", refreshToolbarState);
+        document.addEventListener("selectionchange", () => {
+            if (document.activeElement === editor || editor.contains(document.activeElement)) {
+                refreshToolbarState();
+            }
+        });
+        document.addEventListener("click", (event) => {
+            if (!listMenu.contains(event.target) && event.target !== listMenuButton) {
+                closeListMenu();
+            }
+        });
 
         document.addEventListener("keydown", (event) => {
             const isMeta = event.metaKey || event.ctrlKey;
@@ -370,7 +514,8 @@
 
         form.addEventListener("submit", () => {
             isSubmitting = true;
-            hiddenTextarea.value = editor.innerHTML;
+            const spacing = lineSpacingSelect.value || "1.5";
+            hiddenTextarea.value = '<div data-note-line-spacing="' + spacing + '">' + editor.innerHTML + "</div>";
         });
 
         window.addEventListener("beforeunload", (event) => {
@@ -388,6 +533,8 @@
 
         pushUndoState();
         updateUndoRedoButtons();
+        applyListMode("bullets");
+        refreshToolbarState();
     })();
 </script>
 {% endblock %}
